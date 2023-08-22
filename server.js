@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT =  process.env.PORT || 3000;
+   
 
 // Chave secreta para assinatura do JWT
 const SECRET_KEY = 'YOUR_SUPER_SECRET_KEY'; // Você deve substituir isso por uma chave mais segura
