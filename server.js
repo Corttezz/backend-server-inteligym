@@ -3,6 +3,18 @@ const sql = require('mssql');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 
+const { BlobServiceClient } = require('@azure/storage-blob');
+const multer = require('multer');
+
+const AZURE_STORAGE_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=inteligym;AccountKey=by/mA6ohDjVN5jG9tT5fU+ADIurc/t+t/X8MXXh7psA/S7N3cRIMDn6XFxJsNTDR/omHjA0Somol+ASt+hPK+Q==;EndpointSuffix=core.windows.net';
+const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+const containerName = 'inteligym-perfil-image';
+const containerClient = blobServiceClient.getContainerClient(containerName);
+
+const storage = multer.memoryStorage(); // Armazena o arquivo na memória
+const upload = multer({ storage: storage });
+
+
 const app = express();
 const PORT =  process.env.PORT || 3000;
    
@@ -67,13 +79,13 @@ app.post('/login', async (req, res) => {
       .input('inputPassword', sql.NVarChar, password)
       .query('SELECT * FROM Usuarios WHERE email = @inputEmail AND senha = @inputPassword');
 
-    if (result.recordset.length > 0) {
-      const user = result.recordset[0];
-      const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
-      res.status(200).json({ message: 'Login bem-sucedido!', token: token, userId: user.id });
-    } else {
-      res.status(401).json({ message: 'Email ou senha inválidos!' });
-    }
+      if (result.recordset.length > 0) {
+        const user = result.recordset[0];
+        const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
+        res.status(200).json({ message: 'Login bem-sucedido!', token: token, userId: user.id, imageUrl: user.imageUrl });
+      } else {
+        res.status(401).json({ message: 'Email ou senha inválidos!' });
+      }
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Erro no servidor.' });
@@ -181,6 +193,68 @@ app.put('/updateLevel/:userId', async (req, res) => {
     res.status(500).json({ message: 'Erro ao atualizar o nível.' });
   }
 });
+
+app.put('/updateNome/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { nome } = req.body;
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input('inputNome', sql.NVarChar, nome)
+      .input('inputUserId', sql.Int, userId)
+      .query('UPDATE Usuarios SET nome = @inputNome WHERE id = @inputUserId');
+
+    res.status(200).json({ message: 'Nome atualizado com sucesso!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao atualizar o nome.' });
+  }
+});
+
+app.post('/uploadImage/:userId', upload.single('image'), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const blobName = `user_${userId}_${Date.now()}.jpg`; // Nome único para cada imagem
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+    const uploadBlobResponse = await blockBlobClient.upload(req.file.buffer, req.file.size);
+
+    const imageUrl = blockBlobClient.url;
+
+    // Salve a URL da imagem no banco de dados
+    const pool = await sql.connect(dbConfig);
+    await pool.request()
+      .input('inputImageUrl', sql.NVarChar, imageUrl)
+      .input('inputUserId', sql.Int, userId)
+      .query('UPDATE Usuarios SET imageUrl = @inputImageUrl WHERE id = @inputUserId');
+
+    res.status(200).json({ message: 'Imagem carregada com sucesso!', imageUrl: imageUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao carregar a imagem.' });
+  }
+});
+
+app.get('/getUserData/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input('inputUserId', sql.Int, userId)
+      .query('SELECT nome as name, age, gender, height, weight, imageUrl FROM Usuarios WHERE id = @inputUserId');
+
+    if (result.recordset.length > 0) {
+      const userData = result.recordset[0];
+      res.status(200).json(userData);
+    } else {
+      res.status(404).json({ message: 'Usuário não encontrado!' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao buscar os dados do usuário.' });
+  }
+});
+
+
 
 
 app.listen(PORT, () => {
