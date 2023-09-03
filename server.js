@@ -211,6 +211,47 @@ app.put('/updateNome/:userId', async (req, res) => {
   }
 });
 
+// isRegistred type BIT para verificar se o usuário já está cadastrado
+app.put('/updateIsRegistred/:userId', async (req, res) => { 
+  try {
+    const { userId } = req.params;
+    const { isRegistred } = req.body;
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input('inputIsRegistred', sql.Bit, isRegistred)
+      .input('inputUserId', sql.Int, userId)
+      .query('UPDATE Usuarios SET isRegistred = @inputIsRegistred WHERE id = @inputUserId');
+
+    res.status(200).json({ message: 'Cadastro atualizado com sucesso!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao atualizar o cadastro.' });
+  }
+});
+
+// retornar o valor do isRegistred para verificar se é 1 ou 0 e assim saber se o usuário já está cadastrado
+app.get('/getIsRegistred/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input('inputUserId', sql.Int, userId)
+      .query('SELECT isRegistred FROM Usuarios WHERE id = @inputUserId');
+
+    if (result.recordset.length > 0) {
+      const isRegistred = result.recordset[0].isRegistred;
+      res.status(200).json({ isRegistred: isRegistred });
+    } else {
+      res.status(404).json({ message: 'Usuário não encontrado!' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao buscar os dados do usuário.' });
+  }
+});
+
+
+
 app.post('/uploadImage/:userId', upload.single('image'), async (req, res) => {
   try {
     const { userId } = req.params;
