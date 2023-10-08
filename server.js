@@ -347,8 +347,29 @@ app.post('/insertTreino/:userId', async (req, res) => {
   }
 });
 
+// endpoint para atualizar a frequecia
 
-// ...
+app.put('/updateFrequencia/:userId', async (req, res) => {
+
+  try {
+
+    const { userId } = req.params;
+    const { frequencia } = req.body;
+    const pool = await sql.connect(dbConfig);
+
+    const result = await pool.request()
+      .input('inputFrequencia', sql.Int, frequencia)
+      .input('inputUserId', sql.Int, userId)
+      .query('UPDATE treino SET frequencia = @inputFrequencia WHERE usuario_id = @inputUserId');
+
+    res.status(200).json({ message: 'Frequência atualizada com sucesso!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao atualizar a frequência.' });
+  }
+}
+);
+
 
 
 
