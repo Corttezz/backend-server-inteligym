@@ -295,6 +295,61 @@ app.get('/getUserData/:userId', async (req, res) => {
   }
 });
 
+// ...
+
+app.post('/insertTreino/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const {
+      frequencia,
+      objetivo,
+      dias_treino,
+      parte_corpo,
+      firstTreino
+    } = req.body;
+
+    // Conecte-se ao banco de dados SQL
+    const pool = await sql.connect(dbConfig);
+
+    // Verifique se já existe um registro com o mesmo usuario_id
+    const existingRecord = await pool.request()
+      .input('inputUserId', sql.Int, userId)
+      .query('SELECT TOP 1 * FROM treino WHERE usuario_id = @inputUserId');
+
+    if (existingRecord.recordset.length > 0) {
+      // Já existe um registro com o mesmo usuario_id, então atualize-o
+      const result = await pool.request()
+        .input('inputUserId', sql.Int, userId)
+        .input('inputFrequencia', sql.Int, frequencia)
+        .input('inputObjetivo', sql.NVarChar, objetivo)
+        .input('inputDiasTreino', sql.Int, dias_treino)
+        .input('inputParteCorpo', sql.NVarChar, parte_corpo)
+        .input('inputFirstTreino', sql.Int, firstTreino)
+        .query('UPDATE treino SET frequencia = @inputFrequencia, objetivo = @inputObjetivo, dias_treino = @inputDiasTreino, parte_corpo = @inputParteCorpo, firstTreino = @inputFirstTreino WHERE usuario_id = @inputUserId');
+
+      res.status(200).json({ message: 'Treino atualizado com sucesso!' });
+    } else {
+      // Não existe um registro com o mesmo usuario_id, então insira um novo
+      const result = await pool.request()
+        .input('inputUserId', sql.Int, userId)
+        .input('inputFrequencia', sql.Int, frequencia)
+        .input('inputObjetivo', sql.NVarChar, objetivo)
+        .input('inputDiasTreino', sql.Int, dias_treino)
+        .input('inputParteCorpo', sql.NVarChar, parte_corpo)
+        .input('inputFirstTreino', sql.Int, firstTreino)
+        .query('INSERT INTO treino (usuario_id, frequencia, objetivo, dias_treino, parte_corpo, firstTreino) VALUES (@inputUserId, @inputFrequencia, @inputObjetivo, @inputDiasTreino, @inputParteCorpo, @inputFirstTreino)');
+
+      res.status(200).json({ message: 'Treino inserido com sucesso!' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao inserir ou atualizar o treino.' });
+  }
+});
+
+
+// ...
+
 
 
 
