@@ -371,6 +371,53 @@ app.put('/updateFrequencia/:userId', async (req, res) => {
 );
 
 
+// endpoint para atualizar o objetivo
+
+app.put('/updateObjetivo/:userId', async (req, res) => {
+
+  try {
+
+    const { userId } = req.params;
+    const { objetivo } = req.body;
+    const pool = await sql.connect(dbConfig);
+
+    const result = await pool.request()
+      .input('inputObjetivo', sql.NVarChar, objetivo)
+      .input('inputUserId', sql.Int, userId)
+      .query('UPDATE treino SET objetivo = @inputObjetivo WHERE usuario_id = @inputUserId');
+
+    res.status(200).json({ message: 'Objetivo atualizado com sucesso!' });
+  } catch (error) {
+
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao atualizar o objetivo.' });
+  }
+}
+);
+
+//endpoint para atualizar parte do corpo
+
+app.put('/updateParteCorpo/:userId', async (req, res) => {
+
+  try {
+
+    const { userId } = req.params;
+    const { parteCorpo } = req.body;
+    const pool = await sql.connect(dbConfig);
+
+    const result = await pool.request()
+      .input('inputParteCorpo', sql.NVarChar, parteCorpo)
+      .input('inputUserId', sql.Int, userId)
+      .query('UPDATE treino SET parte_corpo = @inputParteCorpo WHERE usuario_id = @inputUserId');
+
+    res.status(200).json({ message: 'Parte do corpo atualizada com sucesso!' });
+  } catch (error) {
+      
+      console.error(error);
+      res.status(500).json({ message: 'Erro ao atualizar a parte do corpo.' });
+    }
+  }
+);
 
 
 
