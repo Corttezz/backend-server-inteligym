@@ -281,7 +281,7 @@ app.get('/getUserData/:userId', async (req, res) => {
     const pool = await sql.connect(dbConfig);
     const result = await pool.request()
       .input('inputUserId', sql.Int, userId)
-      .query('SELECT nome, age, gender, height, weight, imageUrl FROM Usuarios WHERE id = @inputUserId');
+      .query('SELECT nome, age, gender, height, weight, imageUrl, goal, level FROM Usuarios WHERE id = @inputUserId');
 
     if (result.recordset.length > 0) {
       const userData = result.recordset[0];
