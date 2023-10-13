@@ -419,8 +419,82 @@ app.put('/updateParteCorpo/:userId', async (req, res) => {
   }
 );
 
+app.get('/getUserTreino/:userId', async (req, res) => {
 
+  try {
+    const { userId } = req.params;
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input('inputUserId', sql.Int, userId)
+      .query('SELECT frequencia, objetivo, dias_treino, parte_corpo, firstTreino FROM treino WHERE usuario_id = @inputUserId');
+
+    if (result.recordset.length > 0) {
+      const userTreino = result.recordset[0];
+      res.status(200).json(userTreino);
+    } else {
+      res.status(404).json({ message: 'Usuário não encontrado!' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao buscar os dados do usuário.' });
+  }
+});
+
+// preciso pegar os dados de uma tabela chamada Exercicios_Bracos
+
+// [
+//   {
+//     "ID": "1",
+//     "Nome": "Extensao de Triceps na Polia (Tricep Pushdown)",
+//     "URL": "https://inteligym.blob.core.windows.net/exercises/Bracos/Extensao%20de%20Triceps%20na%20Polia%20(Tricep%20Pushdown).webp"
+//   },
+//   {
+//     "ID": "2",
+//     "Nome": "Rosca (Dumbbell Curls)",
+//     "URL": "https://inteligym.blob.core.windows.net/exercises/Bracos/Rosca%20(Dumbbell%20Curls).gif"
+//   },
+//   {
+//     "ID": "3",
+//     "Nome": "Rosca Direta (Barbell Bicep Curls)",
+//     "URL": "https://inteligym.blob.core.windows.net/exercises/Bracos/Rosca%20Direta%20(Barbell%20Bicep%20Curls).gif"
+//   },
+//   {
+//     "ID": "4",
+//     "Nome": "Rosca Martelo (Hammer Curls)",
+//     "URL": "https://inteligym.blob.core.windows.net/exercises/Bracos/Rosca%20Martelo%20(Hammer%20Curls).gif"
+//   },
+//   {
+//     "ID": "5",
+//     "Nome": "Triceps no Banco (Tricep Dips)",
+//     "URL": "https://inteligym.blob.core.windows.net/exercises/Bracos/Triceps%20no%20Banco%20(Tricep%20Dips).gif"
+//   }
+// ]
+
+app.get('/getExerciciosBracos', async (req, res) => {
+
+  try {
+
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .query('SELECT * FROM Exercicios_Bracos');
+
+    if (result.recordset.length > 0) {
+      const exerciciosBracos = result.recordset;
+      res.status(200).json(exerciciosBracos);
+    } else {
+      res.status(404).json({ message: 'Exercícios não encontrados!' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao buscar os exercícios.' });
+  }
+}
+);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
+
+
+  
