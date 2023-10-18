@@ -471,12 +471,9 @@ app.get('/getUserTreino/:userId', async (req, res) => {
 // ]
 
 app.get('/getExerciciosBracos', async (req, res) => {
-
   try {
-
     const pool = await sql.connect(dbConfig);
-    const result = await pool.request()
-      .query('SELECT * FROM Exercicios_Bracos');
+    const result = await pool.request().query('SELECT * FROM Exercicios_Bracos');
 
     if (result.recordset.length > 0) {
       const exerciciosBracos = result.recordset;
@@ -488,8 +485,7 @@ app.get('/getExerciciosBracos', async (req, res) => {
     console.error(error);
     res.status(500).json({ message: 'Erro ao buscar os exercícios.' });
   }
-}
-);
+});
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
